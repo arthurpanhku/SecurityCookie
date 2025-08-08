@@ -1,0 +1,17 @@
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\FileEncryptor.exe
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\FileEncryptor.deps.json
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\FileEncryptor.runtimeconfig.json
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\FileEncryptor.dll
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\FileEncryptor.pdb
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\bin\Debug\net8.0-windows\DotNetZip.dll
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.csproj.AssemblyReference.cache
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.AssemblyInfoInputs.cache
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.AssemblyInfo.cs
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.csproj.CoreCompileInputs.cache
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncr.B7D8A69B.Up2Date
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.dll
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\refint\FileEncryptor.dll
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.pdb
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\FileEncryptor.genruntimeconfig.cache
+C:\Users\ArthurPan\Bond Connect Company Limited\BCCL team - BCCL-PC\IT\002. Information Security\加密工具\.Net\obj\Debug\net8.0-windows\ref\FileEncryptor.dll
