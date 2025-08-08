@@ -14,7 +14,7 @@ namespace FileEncryptor
         private ListBox fileListBox;
         private string configFilePath = Path.Combine(Application.StartupPath, "config.json");
         private string defaultFolderPath;
-        private const string fixedPassword = "XXXXXXXXXXX"; // input the password
+        private const string fixedPassword = "Abcdefg_deg12kn9nk123_haskj12j3b"; // input the password//
 
         public MainForm()
         {
@@ -222,18 +222,22 @@ namespace FileEncryptor
 
             try
             {
+                DateTime now = DateTime.Now;
+                string defaultFileName = $"encrypted-{now.Year:D4}-{now.Month:D2}-{now.Day:D2}-{now.Hour:D2}-{now.Minute:D2}-{now.Second:D2}-01.zip";
+
                 SaveFileDialog saveFileDialog = new SaveFileDialog()
                 {
                     Filter = "ZIP Files (*.zip)|*.zip",
                     Title = "Save Encrypted File",
-                    FileName = "encrypted_files.zip"
+                    FileName = defaultFileName
                 };
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     using (ZipFile zip = new ZipFile())
                     {
+                        zip.UseUnicodeAsNecessary = true;
                         zip.Password = password;
-                        zip.Encryption = EncryptionAlgorithm.WinZipAes256;
+                        zip.Encryption = EncryptionAlgorithm.PkzipWeak;
                         foreach (string file in files)
                         {
                             zip.AddFile(file, "");
@@ -287,5 +291,4 @@ namespace FileEncryptor
             Application.Run(new MainForm());
         }
     }
-
 }
