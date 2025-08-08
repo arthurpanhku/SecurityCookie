@@ -14,7 +14,7 @@ namespace FileEncryptor
         private ListBox fileListBox;
         private string configFilePath = Path.Combine(Application.StartupPath, "config.json");
         private string defaultFolderPath;
-        private const string fixedPassword = "!BDvm!4X1u8Dm]2~RiVQ";
+        private const string fixedPassword = "XXXXXXXXXXX"; // input the password
 
         public MainForm()
         {
@@ -287,4 +287,5 @@ namespace FileEncryptor
             Application.Run(new MainForm());
         }
     }
+
 }
