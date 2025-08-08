@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetches full history for Sonar analysis
+          fetch-depth: 0  # For Sonar incremental analysis
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -26,25 +26,18 @@ jobs:
 
       - name: Restore NuGet Packages
         shell: powershell
-        run: |
-          # If .sln is in a subdir, use: nuget restore src/SecurityCookie.sln
-          # If no .sln and using .csproj: nuget restore SecurityCookie.csproj
-          nuget restore SecurityCookie.sln  # Adjust name/path as needed
+        run: nuget restore encrypt/FileEncryptor.csproj  # Targets the actual project file
 
       - name: Sonar Begin
         shell: powershell
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"arthurpanhku_SecurityCookie" /o:"k1l2m3n4o5p6q7r8s9t0" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"arthurpanhku_SecurityCookie" /o:"k1l2m3n4o5p6q7r8s9t0" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml  # Add coverage if needed
 
       - name: Build Project
         shell: powershell
-        run: |
-          # Match the file from restore step; add /t:Rebuild /p:Configuration=Release for full build
-          # If using .csproj: msbuild SecurityCookie.csproj /t:Rebuild /p:Configuration=Release
-          msbuild SecurityCookie.sln /t:Rebuild /p:Configuration=Release
+        run: msbuild encrypt/FileEncryptor.csproj /t:Rebuild /p:Configuration=Release
 
       - name: Sonar End
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
-        # Add if you want to continue even if analysis fails: continue-on-error: true
