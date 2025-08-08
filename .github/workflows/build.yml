@@ -7,14 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest  # Required for MSBuild/.NET Framework
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for better analysis
+          fetch-depth: 0  # Fetches full history for Sonar analysis
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2  # Adds MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
 
       - name: Install SonarScanner
         shell: powershell
@@ -24,8 +24,12 @@ jobs:
             dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
           }
 
-      - name: Restore NuGet Packages  # If your project uses NuGet
-        run: nuget restore SecurityCookie.sln  # Replace with your .sln name
+      - name: Restore NuGet Packages
+        shell: powershell
+        run: |
+          # If .sln is in a subdir, use: nuget restore src/SecurityCookie.sln
+          # If no .sln and using .csproj: nuget restore SecurityCookie.csproj
+          nuget restore SecurityCookie.sln  # Adjust name/path as needed
 
       - name: Sonar Begin
         shell: powershell
@@ -33,9 +37,14 @@ jobs:
           .\.sonar\scanner\dotnet-sonarscanner begin /k:"arthurpanhku_SecurityCookie" /o:"k1l2m3n4o5p6q7r8s9t0" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
 
       - name: Build Project
-        run: msbuild SecurityCookie.sln /t:Rebuild /p:Configuration=Release  # Specify .sln file explicitly; add /t:Rebuild for full build
+        shell: powershell
+        run: |
+          # Match the file from restore step; add /t:Rebuild /p:Configuration=Release for full build
+          # If using .csproj: msbuild SecurityCookie.csproj /t:Rebuild /p:Configuration=Release
+          msbuild SecurityCookie.sln /t:Rebuild /p:Configuration=Release
 
       - name: Sonar End
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+        # Add if you want to continue even if analysis fails: continue-on-error: true
