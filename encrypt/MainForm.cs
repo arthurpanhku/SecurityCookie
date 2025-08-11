@@ -1,3 +1,4 @@
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -10,11 +11,11 @@ namespace FileEncryptor
 {
     public class MainForm : Form
     {
-        private List<string> files = new List<string>();
+        private List<string> originalFiles = new List<string>();
+        private List<string> filesToEncrypt = new List<string>();
         private ListBox fileListBox;
         private string configFilePath = Path.Combine(Application.StartupPath, "config.json");
         private string defaultFolderPath;
-        private const string fixedPassword = "xxxxx"; // input the password//
 
         public MainForm()
         {
@@ -25,15 +26,57 @@ namespace FileEncryptor
             this.AllowDrop = true;
             this.DragEnter += new DragEventHandler(Form_DragEnter);
             this.DragDrop += new DragEventHandler(Form_DragDrop);
+            this.FormClosing += new FormClosingEventHandler(Form_FormClosing);
+        }
+
+        private void Form_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (Directory.Exists(defaultFolderPath))
+            {
+                try
+                {
+                    Directory.Delete(defaultFolderPath, true);
+                }
+                catch { } // Silent fail to avoid interrupting close
+            }
         }
 
         private void CreateConfigFileIfNotExists()
         {
             if (!File.Exists(configFilePath))
             {
-                var config = new { Password = fixedPassword };
+                string password = PromptForPassword();
+                if (string.IsNullOrEmpty(password))
+                {
+                    MessageBox.Show("Password cannot be empty. Application will exit.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Application.Exit();
+                    return;
+                }
+                var config = new { Password = password };
                 File.WriteAllText(configFilePath, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
             }
+        }
+
+        private string PromptForPassword()
+        {
+            Form prompt = new Form()
+            {
+                Width = 300,
+                Height = 150,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = "Set Encryption Password",
+                StartPosition = FormStartPosition.CenterScreen
+            };
+            Label label = new Label() { Left = 20, Top = 20, Text = "Enter a password:" };
+            TextBox textBox = new TextBox() { Left = 20, Top = 40, Width = 240, UseSystemPasswordChar = true };
+            Button confirmation = new Button() { Text = "OK", Left = 100, Width = 100, Top = 70, DialogResult = DialogResult.OK };
+            confirmation.Click += (sender, e) => { prompt.Close(); };
+            prompt.Controls.Add(label);
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : string.Empty;
         }
 
         private void EnsureDefaultFolderExists()
@@ -83,7 +126,6 @@ namespace FileEncryptor
                 AutoSize = true,
                 Location = new Point(10, 10)
             };
-
             headerPanel.Controls.Add(titleLabel);
 
             Label fileListLabel = new Label()
@@ -138,11 +180,7 @@ namespace FileEncryptor
             importButton.Click += (sender, e) => ImportFiles();
             encryptButton.Click += (sender, e) => EncryptFiles();
             removeButton.Click += (sender, e) => RemoveSelectedFiles();
-            clearButton.Click += (sender, e) =>
-            {
-                files.Clear();
-                fileListBox.Items.Clear();
-            };
+            clearButton.Click += (sender, e) => ClearFileList();
 
             this.Controls.Add(headerPanel);
             this.Controls.Add(fileListLabel);
@@ -159,6 +197,23 @@ namespace FileEncryptor
             toolTip.SetToolTip(clearButton, "Clear the list of imported files.");
         }
 
+        private string GetUniqueDestFile(string filename)
+        {
+            string dest = Path.Combine(defaultFolderPath, filename);
+            if (!File.Exists(dest)) return dest;
+
+            string name = Path.GetFileNameWithoutExtension(filename);
+            string ext = Path.GetExtension(filename);
+            int i = 1;
+            while (true)
+            {
+                string newName = $"{name} ({i}){ext}";
+                dest = Path.Combine(defaultFolderPath, newName);
+                if (!File.Exists(dest)) return dest;
+                i++;
+            }
+        }
+
         private void ImportFiles()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog()
@@ -166,16 +221,19 @@ namespace FileEncryptor
                 Multiselect = true,
                 Title = "Select Files to Encrypt"
             };
+
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 foreach (string file in openFileDialog.FileNames)
                 {
-                    if (!files.Contains(file))
+                    if (!originalFiles.Contains(file))
                     {
-                        string destFile = Path.Combine(defaultFolderPath, Path.GetFileName(file));
-                        File.Copy(file, destFile, true);
-                        files.Add(destFile);
-                        fileListBox.Items.Add(destFile);
+                        originalFiles.Add(file);
+                        string filename = Path.GetFileName(file);
+                        string destFile = GetUniqueDestFile(filename);
+                        File.Copy(file, destFile, false);
+                        filesToEncrypt.Add(destFile);
+                        fileListBox.Items.Add(file);
                     }
                 }
             }
@@ -185,25 +243,44 @@ namespace FileEncryptor
         {
             if (fileListBox.SelectedItems.Count > 0)
             {
-                List<string> toRemove = new List<string>();
-                foreach (string selected in fileListBox.SelectedItems)
+                List<int> indicesToRemove = new List<int>();
+                foreach (int selectedIndex in fileListBox.SelectedIndices)
                 {
-                    toRemove.Add(selected);
+                    indicesToRemove.Add(selectedIndex);
                 }
-                foreach (string item in toRemove)
+                indicesToRemove.Sort((a, b) => b.CompareTo(a)); // Remove from end to avoid index shifts
+
+                foreach (int index in indicesToRemove)
                 {
-                    files.Remove(item);
-                    fileListBox.Items.Remove(item);
+                    string dest = filesToEncrypt[index];
+                    originalFiles.RemoveAt(index);
+                    filesToEncrypt.RemoveAt(index);
+                    fileListBox.Items.RemoveAt(index);
                     try
                     {
-                        File.Delete(item);
+                        File.Delete(dest);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error deleting file {item}: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Error deleting file {dest}: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
+        }
+
+        private void ClearFileList()
+        {
+            foreach (string dest in filesToEncrypt)
+            {
+                try
+                {
+                    File.Delete(dest);
+                }
+                catch { } // Silent fail
+            }
+            originalFiles.Clear();
+            filesToEncrypt.Clear();
+            fileListBox.Items.Clear();
         }
 
         private void EncryptFiles()
@@ -214,7 +291,8 @@ namespace FileEncryptor
                 MessageBox.Show("Failed to read encryption password from config.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (files.Count == 0)
+
+            if (filesToEncrypt.Count == 0)
             {
                 MessageBox.Show("No files imported.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -231,22 +309,22 @@ namespace FileEncryptor
                     Title = "Save Encrypted File",
                     FileName = defaultFileName
                 };
+
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     using (ZipFile zip = new ZipFile())
                     {
                         zip.UseUnicodeAsNecessary = true;
                         zip.Password = password;
-                        zip.Encryption = EncryptionAlgorithm.PkzipWeak;
-                        foreach (string file in files)
+                        zip.Encryption = EncryptionAlgorithm.WinZipAes256;
+                        foreach (string file in filesToEncrypt)
                         {
                             zip.AddFile(file, "");
                         }
                         zip.Save(saveFileDialog.FileName);
                     }
                     MessageBox.Show($"Encrypted file saved to: {saveFileDialog.FileName}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    files.Clear();
-                    fileListBox.Items.Clear();
+                    ClearFileList();
                     Directory.Delete(defaultFolderPath, true);
                 }
             }
@@ -273,12 +351,14 @@ namespace FileEncryptor
             string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop);
             foreach (string filePath in filePaths)
             {
-                if (File.Exists(filePath) && !files.Contains(filePath))
+                if (File.Exists(filePath) && !originalFiles.Contains(filePath))
                 {
-                    string destFile = Path.Combine(defaultFolderPath, Path.GetFileName(filePath));
-                    File.Copy(filePath, destFile, true);
-                    files.Add(destFile);
-                    fileListBox.Items.Add(destFile);
+                    originalFiles.Add(filePath);
+                    string filename = Path.GetFileName(filePath);
+                    string destFile = GetUniqueDestFile(filename);
+                    File.Copy(filePath, destFile, false);
+                    filesToEncrypt.Add(destFile);
+                    fileListBox.Items.Add(filePath);
                 }
             }
         }
@@ -292,4 +372,4 @@ namespace FileEncryptor
         }
     }
 }
-
+```
