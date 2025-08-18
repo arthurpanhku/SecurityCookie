@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2025 Arthur Pan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,6 +31,7 @@ using ICSharpCode.SharpZipLib.Zip;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 
 namespace FileEncryptor
 {
@@ -59,36 +84,118 @@ namespace FileEncryptor
             LogMessage($"{message}: {ex.Message}\n{ex.StackTrace}", level);
         }
 
+        private bool IsValidPassword(string pw)
+        {
+            if (string.IsNullOrEmpty(pw) || pw.Length < 12)
+            {
+                return false;
+            }
+
+            string specialChars = "!@#$%^&*()_+-=[]{}|;':\",./<>?";
+            bool hasSpecial = pw.Any(c => specialChars.Contains(c));
+            if (!hasSpecial)
+            {
+                return false;
+            }
+
+            List<string> weakPasswords = new List<string>
+            {
+                "password", "123456", "12345678", "123456789", "qwerty", "abc123", "letmein", "welcome", "admin", "password1"
+            };
+            if (weakPasswords.Contains(pw.ToLowerInvariant()))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private void PromptForPassword()
         {
             Form prompt = new Form()
             {
-                Width = 300,
-                Height = 150,
+                Width = 400,
+                Height = 300,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 Text = "Set Encryption Password",
                 StartPosition = FormStartPosition.CenterParent
             };
 
             Label label = new Label() { Left = 20, Top = 20, Text = "Enter password:\n(It will be stored encrypted in config.json)" };
-            TextBox textBox = new TextBox() { Left = 20, Top = 60, Width = 240, PasswordChar = '*' };
-            Button confirmation = new Button() { Text = "Ok", Left = 150, Width = 100, Top = 90 };
-            confirmation.Click += (sender, e) => { prompt.Close(); };
+            TextBox passwordTextBox = new TextBox() { Left = 20, Top = 60, Width = 300, PasswordChar = '*' };
+            Button showPasswordButton = new Button() { Text = "Show", Left = 330, Top = 60, Width = 50 };
+            Label confirmLabel = new Label() { Left = 20, Top = 90, Text = "Confirm password:" };
+            TextBox confirmTextBox = new TextBox() { Left = 20, Top = 110, Width = 300, PasswordChar = '*' };
+            Button showConfirmButton = new Button() { Text = "Show", Left = 330, Top = 110, Width = 50 };
+            Button confirmation = new Button() { Text = "Ok", Left = 150, Width = 100, Top = 150 };
+
+            showPasswordButton.Click += (sender, e) =>
+            {
+                if (showPasswordButton.Text == "Show")
+                {
+                    passwordTextBox.PasswordChar = '\0';
+                    showPasswordButton.Text = "Hide";
+                }
+                else
+                {
+                    passwordTextBox.PasswordChar = '*';
+                    showPasswordButton.Text = "Show";
+                }
+            };
+
+            showConfirmButton.Click += (sender, e) =>
+            {
+                if (showConfirmButton.Text == "Show")
+                {
+                    confirmTextBox.PasswordChar = '\0';
+                    showConfirmButton.Text = "Hide";
+                }
+                else
+                {
+                    confirmTextBox.PasswordChar = '*';
+                    showConfirmButton.Text = "Show";
+                }
+            };
+
+            confirmation.Click += (sender, e) =>
+            {
+                string pw = passwordTextBox.Text;
+                string confirmPw = confirmTextBox.Text;
+
+                if (pw != confirmPw)
+                {
+                    MessageBox.Show("Passwords do not match.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(pw))
+                {
+                    MessageBox.Show("Password cannot be empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!IsValidPassword(pw))
+                {
+                    MessageBox.Show("Password must be at least 12 characters long, contain at least one special character, and not be a common weak password.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                prompt.Close();
+            };
+
             prompt.Controls.Add(label);
-            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(passwordTextBox);
+            prompt.Controls.Add(showPasswordButton);
+            prompt.Controls.Add(confirmLabel);
+            prompt.Controls.Add(confirmTextBox);
+            prompt.Controls.Add(showConfirmButton);
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
             prompt.ShowDialog(this);
 
-            string pw = textBox.Text;
-            if (string.IsNullOrEmpty(pw))
-            {
-                MessageBox.Show("Password cannot be empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
-                return;
-            }
+            string pwFinal = passwordTextBox.Text;
 
-            byte[] encryptedPw = ProtectedData.Protect(Encoding.UTF8.GetBytes(pw), null, DataProtectionScope.CurrentUser);
+            byte[] encryptedPw = ProtectedData.Protect(Encoding.UTF8.GetBytes(pwFinal), null, DataProtectionScope.CurrentUser);
             string encryptedPwStr = Convert.ToBase64String(encryptedPw);
 
             var config = new { Password = encryptedPwStr };
@@ -125,7 +232,7 @@ namespace FileEncryptor
 
         private void InitializeComponent()
         {
-            this.Text = "文件加密小工具 ver 0.10";
+            this.Text = "文件加密小工具 ver 1.2";
             this.Size = new System.Drawing.Size(600, 450);
             this.MinimumSize = new System.Drawing.Size(400, 350);
             this.AutoScaleMode = AutoScaleMode.Font;
